@@ -6,6 +6,7 @@ interface TokenPayload {
   email: string;
   tipo: string;
   empresa_id: string;
+  departamento_id?: string;
 }
 
 export interface AuthRequest extends Request {

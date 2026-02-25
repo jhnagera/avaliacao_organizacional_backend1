@@ -9,7 +9,7 @@ import { AuthRequest } from '../middlewares/auth';
 export class QuestionarioController {
   async criar(req: AuthRequest, res: Response) {
     try {
-      const { titulo, descricao, data_inicio, data_fim, anonimo, questoes, empresa_id: empresa_id_body } = req.body;
+      const { titulo, descricao, data_inicio, data_fim, anonimo, tipo, destinatario_tipo, departamento_id, usuario_id, questoes, empresa_id: empresa_id_body } = req.body;
 
       // Se for super_admin, permite determinar a empresa, senão usa a do token
       let empresa_id = req.user?.tipo === 'super_admin' ? (empresa_id_body || req.user?.empresa_id) : req.user?.empresa_id;
@@ -26,6 +26,10 @@ export class QuestionarioController {
         data_inicio,
         data_fim,
         anonimo,
+        tipo,
+        destinatario_tipo,
+        departamento_id,
+        usuario_id,
         empresa_id,
         questoes: questoes?.map((q: any, index: number) => ({
           pergunta: q.pergunta,
@@ -52,13 +56,37 @@ export class QuestionarioController {
   async listar(req: AuthRequest, res: Response) {
     try {
       const empresa_id = req.user?.empresa_id;
+      const usuario_id = req.user?.id;
+      const departamento_id = req.user?.departamento_id;
+      const tipo_usuario = req.user?.tipo;
 
       const questionarioRepository = AppDataSource.getRepository(Questionario);
-      const questionarios = await questionarioRepository.find({
-        where: { empresa_id },
-        relations: ['questoes', 'questoes.opcoes'],
-        order: { criado_em: 'DESC' }
-      });
+
+      let query = questionarioRepository.createQueryBuilder('questionario')
+        .leftJoinAndSelect('questionario.questoes', 'questoes')
+        .leftJoinAndSelect('questoes.opcoes', 'opcoes')
+        .leftJoinAndSelect('questionario.departamento', 'departamento')
+        .leftJoinAndSelect('questionario.usuario', 'usuario')
+        .where('questionario.empresa_id = :empresa_id', { empresa_id })
+        .orderBy('questionario.criado_em', 'DESC');
+
+      // Se for colaborador, filtra pelos destinatários permitidos
+      if (tipo_usuario === 'colaborador') {
+        query = query.andWhere(
+          '(questionario.destinatario_tipo = :todos OR (questionario.destinatario_tipo = :depto AND questionario.departamento_id = :departamento_id) OR (questionario.destinatario_tipo = :individual AND questionario.usuario_id = :usuario_id))',
+          {
+            todos: 'todos',
+            depto: 'departamento',
+            departamento_id,
+            individual: 'individual',
+            usuario_id
+          }
+        );
+        // Colaboradores só veem questionários ativos
+        query = query.andWhere('questionario.status = :status', { status: 'ativo' });
+      }
+
+      const questionarios = await query.getMany();
 
       return res.json(questionarios);
     } catch (error) {
@@ -75,7 +103,7 @@ export class QuestionarioController {
       const questionarioRepository = AppDataSource.getRepository(Questionario);
       const questionario = await questionarioRepository.findOne({
         where: { id, empresa_id },
-        relations: ['questoes', 'questoes.opcoes']
+        relations: ['questoes', 'questoes.opcoes', 'departamento', 'usuario']
       });
 
       if (!questionario) {
@@ -93,18 +121,89 @@ export class QuestionarioController {
     try {
       const { id } = req.params;
       const empresa_id = req.user?.empresa_id;
-      const dados = req.body;
+      const { questoes, ...dadosQuestionario } = req.body;
 
       const questionarioRepository = AppDataSource.getRepository(Questionario);
+      const questaoRepository = AppDataSource.getRepository(Questao);
+      const opcaoRepository = AppDataSource.getRepository(OpcaoResposta);
+
       const questionario = await questionarioRepository.findOne({
-        where: { id, empresa_id }
+        where: { id, empresa_id },
+        relations: ['questoes', 'questoes.opcoes']
       });
 
       if (!questionario) {
         return res.status(404).json({ error: 'Questionário não encontrado' });
       }
 
-      questionarioRepository.merge(questionario, dados);
+      // Atualiza campos básicos
+      questionarioRepository.merge(questionario, dadosQuestionario);
+
+      if (questoes) {
+        // IDs das questões que vieram na requisição
+        const questoesIdsRequest = questoes.filter((q: any) => q.id).map((q: any) => q.id);
+
+        // Remove questões que não estão mais presentes
+        const questoesParaRemover = questionario.questoes.filter(q => !questoesIdsRequest.includes(q.id));
+        if (questoesParaRemover.length > 0) {
+          await questaoRepository.remove(questoesParaRemover);
+        }
+
+        // Atualiza ou cria novas questões
+        questionario.questoes = await Promise.all(questoes.map(async (q: any, index: number) => {
+          let questao = questionario.questoes.find(existingQ => existingQ.id === q.id);
+
+          if (questao) {
+            // Atualiza questão existente
+            questao.pergunta = q.pergunta;
+            questao.tipo = q.tipo;
+            questao.obrigatoria = q.obrigatoria ?? false;
+            questao.ordem = index + 1;
+
+            // Gerencia opções da questão
+            if (q.opcoes) {
+              const opcoesIdsRequest = q.opcoes.filter((o: any) => o.id).map((o: any) => o.id);
+              const opcoesParaRemover = questao.opcoes.filter(o => !opcoesIdsRequest.includes(o.id));
+
+              if (opcoesParaRemover.length > 0) {
+                await opcaoRepository.remove(opcoesParaRemover);
+              }
+
+              questao.opcoes = q.opcoes.map((o: any, i: number) => {
+                let opcao = questao!.opcoes.find(existingO => existingO.id === o.id);
+                if (opcao) {
+                  opcao.texto = o.texto;
+                  opcao.valor = o.valor;
+                  opcao.ordem = i + 1;
+                  return opcao;
+                }
+                return opcaoRepository.create({
+                  texto: o.texto,
+                  valor: o.valor,
+                  ordem: i + 1
+                });
+              });
+            } else {
+              questao.opcoes = [];
+            }
+            return questao;
+          } else {
+            // Cria nova questão
+            return questaoRepository.create({
+              pergunta: q.pergunta,
+              tipo: q.tipo,
+              obrigatoria: q.obrigatoria ?? false,
+              ordem: index + 1,
+              opcoes: q.opcoes?.map((o: any, i: number) => ({
+                texto: o.texto,
+                valor: o.valor,
+                ordem: i + 1
+              }))
+            });
+          }
+        }));
+      }
+
       await questionarioRepository.save(questionario);
 
       return res.json(questionario);

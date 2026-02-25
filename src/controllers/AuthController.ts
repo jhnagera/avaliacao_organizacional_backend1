@@ -33,7 +33,8 @@ export class AuthController {
           id: usuario.id,
           email: usuario.email,
           tipo: usuario.tipo,
-          empresa_id: usuario.empresa_id
+          empresa_id: usuario.empresa_id,
+          departamento_id: usuario.departamento_id
         },
         process.env.JWT_SECRET || 'secret',
         { expiresIn: '7d' }

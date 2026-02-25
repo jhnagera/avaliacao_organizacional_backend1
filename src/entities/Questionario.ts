@@ -2,11 +2,27 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 import { Empresa } from './Empresa';
 import { Questao } from './Questao';
 import { RespostaQuestionario } from './RespostaQuestionario';
+import { Departamento } from './Departamento';
+import { Usuario } from './Usuario';
 
 export enum StatusQuestionario {
   RASCUNHO = 'rascunho',
   ATIVO = 'ativo',
   ENCERRADO = 'encerrado'
+}
+
+export enum TipoQuestionario {
+  PESQUISA_CLIMA = 'pesquisa_clima',
+  AVALIACAO_DESEMPENHO = 'avaliacao_desempenho',
+  FEEDBACK = 'feedback',
+  SAUDE_MENTAL = 'saude_mental',
+  OUTRO = 'outro'
+}
+
+export enum TargetQuestionario {
+  TODOS = 'todos',
+  DEPARTAMENTO = 'departamento',
+  INDIVIDUAL = 'individual'
 }
 
 @Entity('questionarios')
@@ -27,6 +43,20 @@ export class Questionario {
   })
   status: StatusQuestionario;
 
+  @Column({
+    type: 'enum',
+    enum: TipoQuestionario,
+    default: TipoQuestionario.PESQUISA_CLIMA
+  })
+  tipo: TipoQuestionario;
+
+  @Column({
+    type: 'enum',
+    enum: TargetQuestionario,
+    default: TargetQuestionario.TODOS
+  })
+  destinatario_tipo: TargetQuestionario;
+
   @Column({ type: 'date', nullable: true })
   data_inicio: Date;
 
@@ -39,9 +69,23 @@ export class Questionario {
   @Column({ type: 'uuid' })
   empresa_id: string;
 
+  @Column({ type: 'uuid', nullable: true })
+  departamento_id: string;
+
+  @Column({ type: 'uuid', nullable: true })
+  usuario_id: string;
+
   @ManyToOne(() => Empresa, empresa => empresa.questionarios)
   @JoinColumn({ name: 'empresa_id' })
   empresa: Empresa;
+
+  @ManyToOne(() => Departamento)
+  @JoinColumn({ name: 'departamento_id' })
+  departamento: Departamento;
+
+  @ManyToOne(() => Usuario)
+  @JoinColumn({ name: 'usuario_id' })
+  usuario: Usuario;
 
   @OneToMany(() => Questao, questao => questao.questionario, { cascade: true })
   questoes: Questao[];

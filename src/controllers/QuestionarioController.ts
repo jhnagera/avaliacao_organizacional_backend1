@@ -9,11 +9,17 @@ import { AuthRequest } from '../middlewares/auth';
 export class QuestionarioController {
   async criar(req: AuthRequest, res: Response) {
     try {
-      const empresa_id = req.user?.empresa_id;
-      const { titulo, descricao, data_inicio, data_fim, anonimo, questoes } = req.body;
+      const { titulo, descricao, data_inicio, data_fim, anonimo, questoes, empresa_id: empresa_id_body } = req.body;
+
+      // Se for super_admin, permite determinar a empresa, senão usa a do token
+      let empresa_id = req.user?.tipo === 'super_admin' ? (empresa_id_body || req.user?.empresa_id) : req.user?.empresa_id;
+
+      if (!empresa_id) {
+        return res.status(400).json({ error: 'Empresa não selecionada' });
+      }
 
       const questionarioRepository = AppDataSource.getRepository(Questionario);
-      
+
       const questionario = questionarioRepository.create({
         titulo,
         descricao,
@@ -90,8 +96,8 @@ export class QuestionarioController {
       const dados = req.body;
 
       const questionarioRepository = AppDataSource.getRepository(Questionario);
-      const questionario = await questionarioRepository.findOne({ 
-        where: { id, empresa_id } 
+      const questionario = await questionarioRepository.findOne({
+        where: { id, empresa_id }
       });
 
       if (!questionario) {
@@ -114,8 +120,8 @@ export class QuestionarioController {
       const empresa_id = req.user?.empresa_id;
 
       const questionarioRepository = AppDataSource.getRepository(Questionario);
-      const questionario = await questionarioRepository.findOne({ 
-        where: { id, empresa_id } 
+      const questionario = await questionarioRepository.findOne({
+        where: { id, empresa_id }
       });
 
       if (!questionario) {
@@ -209,7 +215,7 @@ export class QuestionarioController {
 
       const resultadosPorQuestao = questionario.questoes.map(questao => {
         const respostasQuestao = respostas.filter(r => r.questao_id === questao.id);
-        
+
         let estatisticas = {};
 
         if (questao.tipo === 'multipla_escolha' || questao.tipo === 'sim_nao') {
@@ -224,7 +230,7 @@ export class QuestionarioController {
         } else if (questao.tipo === 'escala') {
           const valores = respostasQuestao.map(r => r.resposta_valor || 0);
           const media = valores.reduce((a, b) => a + b, 0) / valores.length || 0;
-          estatisticas = { 
+          estatisticas = {
             media: media.toFixed(2),
             total_respostas: valores.length
           };

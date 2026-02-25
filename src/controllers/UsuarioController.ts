@@ -8,8 +8,10 @@ export class UsuarioController {
   // ✅ CRIAR — empresa_id vem do token JWT, não do body
   async criar(req: AuthRequest, res: Response) {
     try {
-      const { nome, email, senha, cpf, telefone, cargo, tipo, departamento_id } = req.body;
-      const empresa_id = req.user?.empresa_id;
+      const { nome, email, senha, cpf, telefone, cargo, tipo, departamento_id, empresa_id: empresa_id_body } = req.body;
+
+      // Se for super_admin, permite definir empresa_id, senão usa o do token
+      let empresa_id = req.user?.tipo === 'super_admin' ? (empresa_id_body || req.user?.empresa_id) : req.user?.empresa_id;
 
       if (!empresa_id) {
         return res.status(401).json({ error: 'Empresa não identificada no token' });
@@ -183,8 +185,9 @@ export class UsuarioController {
           }
 
           const usuario = usuarioRepository.create({ ...dadosUsuario, empresa_id });
-          await usuarioRepository.save(usuario);
-          usuariosCriados.push(usuario.email);
+          const usuarioSalvo = await usuarioRepository.save(usuario);
+          const emailSalvo = (usuarioSalvo as any).email;
+          usuariosCriados.push(emailSalvo);
         } catch {
           erros.push({ email: dadosUsuario.email, erro: 'Erro ao processar usuário' });
         }

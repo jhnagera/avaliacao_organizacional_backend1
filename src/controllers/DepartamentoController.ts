@@ -6,8 +6,12 @@ import { AuthRequest } from '../middlewares/auth';
 export class DepartamentoController {
   async criar(req: AuthRequest, res: Response) {
     try {
-      const empresa_id = req.user?.empresa_id;
-      const { nome, descricao } = req.body;
+      const { nome, descricao, empresa_id: empresa_id_body } = req.body;
+      let empresa_id = req.user?.tipo === 'super_admin' ? (empresa_id_body || req.user?.empresa_id) : req.user?.empresa_id;
+
+      if (!empresa_id) {
+        return res.status(400).json({ error: 'Empresa não selecionada' });
+      }
 
       const departamentoRepository = AppDataSource.getRepository(Departamento);
       const departamento = departamentoRepository.create({ nome, descricao, empresa_id });
@@ -23,7 +27,7 @@ export class DepartamentoController {
     try {
       const empresa_id = req.user?.empresa_id;
       const departamentoRepository = AppDataSource.getRepository(Departamento);
-      const departamentos = await departamentoRepository.find({ 
+      const departamentos = await departamentoRepository.find({
         where: { empresa_id },
         order: { nome: 'ASC' }
       });

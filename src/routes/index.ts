@@ -5,6 +5,7 @@ import { UsuarioController } from '../controllers/UsuarioController';
 import { DepartamentoController } from '../controllers/DepartamentoController';
 import { QuestionarioController } from '../controllers/QuestionarioController';
 import { AvisoController, ReclamacaoController, DenunciaController, ArquivoController } from '../controllers/OutrosControllers';
+import { MetadataController } from '../controllers/MetadataController';
 import { authMiddleware, isAdmin, isRHorAdmin } from '../middlewares/auth';
 
 const router = Router();
@@ -19,8 +20,10 @@ const avisoController = new AvisoController();
 const reclamacaoController = new ReclamacaoController();
 const denunciaController = new DenunciaController();
 const arquivoController = new ArquivoController();
+const metadataController = new MetadataController();
 
 // Rotas públicas
+router.get('/metadata/enums', metadataController.getEnums.bind(metadataController));
 router.post('/auth/login', authController.login.bind(authController));
 
 // Rotas autenticadas

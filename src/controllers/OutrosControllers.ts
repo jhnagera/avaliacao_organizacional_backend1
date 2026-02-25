@@ -9,9 +9,11 @@ import { AuthRequest } from '../middlewares/auth';
 export class AvisoController {
   async criar(req: AuthRequest, res: Response) {
     try {
-      const empresa_id = req.user?.empresa_id;
+      const { empresa_id: empresa_id_body, ...dados } = req.body;
+      let empresa_id = req.user?.tipo === 'super_admin' ? (empresa_id_body || req.user?.empresa_id) : req.user?.empresa_id;
+
       const avisoRepository = AppDataSource.getRepository(Aviso);
-      const aviso = avisoRepository.create({ ...req.body, empresa_id });
+      const aviso = avisoRepository.create({ ...dados, empresa_id });
       await avisoRepository.save(aviso);
       return res.status(201).json(aviso);
     } catch (error) {
@@ -23,7 +25,7 @@ export class AvisoController {
     try {
       const empresa_id = req.user?.empresa_id;
       const avisoRepository = AppDataSource.getRepository(Aviso);
-      const avisos = await avisoRepository.find({ 
+      const avisos = await avisoRepository.find({
         where: { empresa_id, ativo: true },
         order: { criado_em: 'DESC' }
       });
@@ -67,10 +69,11 @@ export class AvisoController {
 export class ReclamacaoController {
   async criar(req: AuthRequest, res: Response) {
     try {
-      const empresa_id = req.user?.empresa_id;
+      const { empresa_id: empresa_id_body, ...rest } = req.body;
+      let empresa_id = req.user?.tipo === 'super_admin' ? (empresa_id_body || req.user?.empresa_id) : req.user?.empresa_id;
       const usuario_id = req.body.anonimo ? null : req.user?.id;
       const reclamacaoRepository = AppDataSource.getRepository(Reclamacao);
-      const reclamacao = reclamacaoRepository.create({ ...req.body, empresa_id, usuario_id });
+      const reclamacao = reclamacaoRepository.create({ ...rest, empresa_id, usuario_id });
       await reclamacaoRepository.save(reclamacao);
       return res.status(201).json(reclamacao);
     } catch (error) {
@@ -85,7 +88,7 @@ export class ReclamacaoController {
       const reclamacaoRepository = AppDataSource.getRepository(Reclamacao);
       const where: any = { empresa_id };
       if (tipo) where.tipo = tipo;
-      const reclamacoes = await reclamacaoRepository.find({ 
+      const reclamacoes = await reclamacaoRepository.find({
         where,
         relations: ['usuario'],
         order: { criado_em: 'DESC' }
@@ -115,10 +118,11 @@ export class ReclamacaoController {
 export class DenunciaController {
   async criar(req: AuthRequest, res: Response) {
     try {
-      const empresa_id = req.user?.empresa_id;
+      const { empresa_id: empresa_id_body, ...rest } = req.body;
+      let empresa_id = req.user?.tipo === 'super_admin' ? (empresa_id_body || req.user?.empresa_id) : req.user?.empresa_id;
       const usuario_id = req.body.anonimo ? null : req.user?.id;
       const denunciaRepository = AppDataSource.getRepository(Denuncia);
-      const denuncia = denunciaRepository.create({ ...req.body, empresa_id, usuario_id });
+      const denuncia = denunciaRepository.create({ ...rest, empresa_id, usuario_id });
       await denunciaRepository.save(denuncia);
       return res.status(201).json(denuncia);
     } catch (error) {
@@ -130,7 +134,7 @@ export class DenunciaController {
     try {
       const empresa_id = req.user?.empresa_id;
       const denunciaRepository = AppDataSource.getRepository(Denuncia);
-      const denuncias = await denunciaRepository.find({ 
+      const denuncias = await denunciaRepository.find({
         where: { empresa_id },
         relations: ['usuario'],
         order: { criado_em: 'DESC' }
@@ -162,7 +166,7 @@ export class ArquivoController {
     try {
       const empresa_id = req.user?.empresa_id;
       const arquivoRepository = AppDataSource.getRepository(Arquivo);
-      const arquivos = await arquivoRepository.find({ 
+      const arquivos = await arquivoRepository.find({
         where: { empresa_id },
         order: { criado_em: 'DESC' }
       });

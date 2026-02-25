@@ -13,13 +13,13 @@ export class RespostaQuestionario {
   questionario_id: string;
 
   @Column({ type: 'uuid', nullable: true })
-  usuario_id: string;
+  usuario_id: string | null;
 
   @Column({ type: 'uuid' })
   questao_id: string;
 
   @Column({ type: 'uuid', nullable: true })
-  opcao_id: string;
+  opcao_id: string | null;
 
   @Column({ type: 'text', nullable: true })
   resposta_texto: string;

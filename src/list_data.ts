@@ -20,26 +20,42 @@ const ds = new DataSource({
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '5432'),
     username: process.env.DB_USERNAME || 'postgres',
-    password: process.env.DB_PASSWORD || 'postgres',
+    password: process.env.DB_PASSWORD || '123',
     database: process.env.DB_NAME || 'avaliacao_organizacional',
     synchronize: false,
     logging: false,
     entities: [Usuario, Empresa, Departamento, Questionario, Questao, Aviso, RespostaQuestionario, Reclamacao, Denuncia, Arquivo, OpcaoResposta],
 });
 
-async function listData() {
+async function listarTodos() {
     try {
         await ds.initialize();
-        const empresaRepo = ds.getRepository(Empresa);
         const usuarioRepo = ds.getRepository(Usuario);
+        const empresaRepo = ds.getRepository(Empresa);
 
-        const empresas = await empresaRepo.find();
-        console.log('--- EMPRESAS ---');
-        empresas.forEach(e => console.log(`- ${e.nome} | ID: ${e.id} | CNPJ: ${e.cnpj}`));
+        console.log('\n=== TODOS OS USUÁRIOS NO BANCO ===\n');
+        const usuarios = await usuarioRepo.find({ order: { criado_em: 'ASC' } });
 
-        const usuarios = await usuarioRepo.find();
-        console.log('\n--- USUÁRIOS ---');
-        usuarios.forEach(u => console.log(`- ${u.nome} | Email: ${u.email} | Tipo: ${u.tipo} | EmpresaID: ${u.empresa_id}`));
+        for (const u of usuarios) {
+            console.log(`Email: ${u.email}`);
+            console.log(`  Nome: ${u.nome}`);
+            console.log(`  Tipo: ${u.tipo}`);
+            console.log(`  Ativo: ${u.ativo}`);
+            console.log(`  empresa_id: ${u.empresa_id}`);
+            console.log(`  Criado em: ${u.criado_em}`);
+            console.log('');
+        }
+
+        console.log('\n=== TODAS AS EMPRESAS NO BANCO ===\n');
+        const empresas = await empresaRepo.find({ order: { nome: 'ASC' } });
+
+        for (const e of empresas) {
+            console.log(`Nome: ${e.nome}`);
+            console.log(`  ID: ${e.id}`);
+            console.log(`  CNPJ: ${e.cnpj}`);
+            console.log(`  Ativo: ${e.ativo}`);
+            console.log('');
+        }
 
     } catch (error) {
         console.error('ERRO:', error);
@@ -48,4 +64,4 @@ async function listData() {
     }
 }
 
-listData();
+listarTodos();

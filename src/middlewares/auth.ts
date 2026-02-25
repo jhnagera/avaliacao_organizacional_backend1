@@ -31,14 +31,14 @@ export const authMiddleware = (req: AuthRequest, res: Response, next: NextFuncti
 };
 
 export const isAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {
-  if (req.user?.tipo !== 'admin') {
+  if (req.user?.tipo !== 'admin' && req.user?.tipo !== 'super_admin') {
     return res.status(403).json({ error: 'Acesso negado. Apenas administradores.' });
   }
   return next();
 };
 
 export const isRHorAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {
-  if (req.user?.tipo !== 'admin' && req.user?.tipo !== 'rh') {
+  if (req.user?.tipo !== 'admin' && req.user?.tipo !== 'rh' && req.user?.tipo !== 'super_admin') {
     return res.status(403).json({ error: 'Acesso negado. Apenas RH ou administradores.' });
   }
   return next();

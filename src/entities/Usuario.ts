@@ -9,7 +9,8 @@ import { Denuncia } from './Denuncia';
 export enum TipoUsuario {
   ADMIN = 'admin',
   RH = 'rh',
-  COLABORADOR = 'colaborador'
+  COLABORADOR = 'colaborador',
+  SUPER_ADMIN = 'super_admin'
 }
 
 @Entity('usuarios')

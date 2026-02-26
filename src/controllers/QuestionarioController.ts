@@ -356,13 +356,41 @@ export class QuestionarioController {
         };
       });
 
+      // Agrupar respostas detalhadas por usuário (se o questionário não for anônimo)
+      const respostasDetalhadas: any[] = [];
+      if (!questionario.anonimo) {
+        const agruparPorUsuario: Record<string, any> = {};
+        respostas.forEach(r => {
+          if (!r.usuario) return;
+          if (!agruparPorUsuario[r.usuario.id]) {
+            agruparPorUsuario[r.usuario.id] = {
+              usuario_id: r.usuario.id,
+              nome: r.usuario.nome,
+              email: r.usuario.email,
+              data: r.respondido_em,
+              respostas: {}
+            };
+          }
+          let respostaConvertida = r.resposta_texto;
+          if (r.questao.tipo === 'multipla_escolha' || r.questao.tipo === 'sim_nao') {
+            respostaConvertida = r.opcao ? r.opcao.texto : '';
+          } else if (r.questao.tipo === 'escala') {
+            respostaConvertida = String(r.resposta_valor);
+          }
+          agruparPorUsuario[r.usuario.id].respostas[r.questao_id] = respostaConvertida;
+        });
+        respostasDetalhadas.push(...Object.values(agruparPorUsuario));
+      }
+
       return res.json({
         questionario: {
           id: questionario.id,
           titulo: questionario.titulo,
-          total_participantes: parseInt(totalRespostas.total) || 0
+          total_participantes: parseInt(totalRespostas.total) || 0,
+          anonimo: questionario.anonimo,
         },
-        resultados: resultadosPorQuestao
+        resultados: resultadosPorQuestao,
+        respostas_detalhadas: respostasDetalhadas
       });
     } catch (error) {
       console.error('Erro ao obter resultados:', error);

@@ -25,6 +25,8 @@ const metadataController = new MetadataController();
 // Rotas públicas
 router.get('/metadata/enums', metadataController.getEnums.bind(metadataController));
 router.post('/auth/login', authController.login.bind(authController));
+router.get('/empresas/public', empresaController.listarPublico.bind(empresaController));
+router.post('/denuncias/anonimas', denunciaController.criarAnonimo.bind(denunciaController));
 
 // Rotas autenticadas
 router.use(authMiddleware);
@@ -76,8 +78,8 @@ router.put('/reclamacoes/:id', isRHorAdmin, reclamacaoController.atualizar.bind(
 
 // Denúncias
 router.post('/denuncias', denunciaController.criar.bind(denunciaController));
-router.get('/denuncias', isRHorAdmin, denunciaController.listar.bind(denunciaController));
-router.put('/denuncias/:id', isRHorAdmin, denunciaController.atualizar.bind(denunciaController));
+router.get('/denuncias', isAdmin, denunciaController.listar.bind(denunciaController));
+router.put('/denuncias/:id', isAdmin, denunciaController.atualizar.bind(denunciaController));
 
 // Arquivos
 router.get('/arquivos', arquivoController.listar.bind(arquivoController));

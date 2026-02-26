@@ -47,6 +47,22 @@ export class EmpresaController {
     }
   }
 
+  async listarPublico(req: Request, res: Response) {
+    try {
+      const empresaRepository = AppDataSource.getRepository(Empresa);
+      const empresas = await empresaRepository.find({
+        select: ['id', 'nome'],
+        where: { ativo: true },
+        order: { nome: 'ASC' }
+      });
+
+      return res.json(empresas);
+    } catch (error) {
+      console.error('Erro ao listar empresas publicamente:', error);
+      return res.status(500).json({ error: 'Erro ao listar empresas' });
+    }
+  }
+
   async buscarPorId(req: Request, res: Response) {
     try {
       const { id } = req.params;

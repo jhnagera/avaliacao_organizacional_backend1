@@ -130,6 +130,31 @@ export class DenunciaController {
     }
   }
 
+  async criarAnonimo(req: Request, res: Response) {
+    try {
+      const { empresa_id, categoria, descricao } = req.body;
+
+      if (!empresa_id || !categoria || !descricao) {
+        return res.status(400).json({ error: 'Todos os campos são obrigatórios' });
+      }
+
+      const denunciaRepository = AppDataSource.getRepository(Denuncia);
+      const denuncia = denunciaRepository.create({
+        empresa_id,
+        categoria,
+        descricao,
+        usuario_id: null as any,
+        anonimo: true
+      });
+
+      await denunciaRepository.save(denuncia);
+      return res.status(201).json({ message: 'Denúncia registrada com sucesso' });
+    } catch (error) {
+      console.error('Erro ao criar denúncia anônima:', error);
+      return res.status(500).json({ error: 'Erro ao criar denúncia' });
+    }
+  }
+
   async listar(req: AuthRequest, res: Response) {
     try {
       const empresa_id = req.user?.empresa_id;

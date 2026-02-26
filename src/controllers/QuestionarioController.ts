@@ -77,9 +77,9 @@ export class QuestionarioController {
           {
             todos: 'todos',
             depto: 'departamento',
-            departamento_id,
+            departamento_id: departamento_id || '00000000-0000-0000-0000-000000000000',
             individual: 'individual',
-            usuario_id
+            usuario_id: usuario_id || '00000000-0000-0000-0000-000000000000'
           }
         );
         // Colaboradores só veem questionários ativos
@@ -88,7 +88,19 @@ export class QuestionarioController {
 
       const questionarios = await query.getMany();
 
-      return res.json(questionarios);
+      // Verifica se o usuário logado já respondeu cada um dos questionários
+      const respostaRepository = AppDataSource.getRepository(RespostaQuestionario);
+      const questionariosComStatus = await Promise.all(questionarios.map(async (q) => {
+        if (!usuario_id) return { ...q, respondido: false };
+
+        const respostaExistente = await respostaRepository.findOne({
+          where: { questionario_id: q.id, usuario_id }
+        });
+
+        return { ...q, respondido: !!respostaExistente };
+      }));
+
+      return res.json(questionariosComStatus);
     } catch (error) {
       console.error('Erro ao listar questionários:', error);
       return res.status(500).json({ error: 'Erro ao listar questionários' });
@@ -110,7 +122,16 @@ export class QuestionarioController {
         return res.status(404).json({ error: 'Questionário não encontrado' });
       }
 
-      return res.json(questionario);
+      let respondido = false;
+      if (req.user?.id) {
+        const respostaRepository = AppDataSource.getRepository(RespostaQuestionario);
+        const respostaExistente = await respostaRepository.findOne({
+          where: { questionario_id: id, usuario_id: req.user.id }
+        });
+        respondido = !!respostaExistente;
+      }
+
+      return res.json({ ...questionario, respondido });
     } catch (error) {
       console.error('Erro ao buscar questionário:', error);
       return res.status(500).json({ error: 'Erro ao buscar questionário' });
@@ -263,6 +284,16 @@ export class QuestionarioController {
         return res.status(400).json({ error: 'Questionário não está ativo' });
       }
 
+      if (usuario_id) {
+        const respostaExistente = await respostaRepository.findOne({
+          where: { questionario_id: id, usuario_id }
+        });
+
+        if (respostaExistente) {
+          return res.status(400).json({ error: 'Você já respondeu a este questionário.' });
+        }
+      }
+
       const respostasSalvas = [];
 
       for (const resposta of respostas) {
@@ -395,6 +426,27 @@ export class QuestionarioController {
     } catch (error) {
       console.error('Erro ao obter resultados:', error);
       return res.status(500).json({ error: 'Erro ao obter resultados' });
+    }
+  }
+
+  async obterMinhasRespostas(req: AuthRequest, res: Response) {
+    try {
+      const { id } = req.params;
+      const usuario_id = req.user?.id;
+
+      if (!usuario_id) {
+        return res.status(401).json({ error: 'Usuário não autenticado' });
+      }
+
+      const respostaRepository = AppDataSource.getRepository(RespostaQuestionario);
+      const respostas = await respostaRepository.find({
+        where: { questionario_id: id, usuario_id }
+      });
+
+      return res.json(respostas);
+    } catch (error) {
+      console.error('Erro ao buscar respostas:', error);
+      return res.status(500).json({ error: 'Erro ao buscar respostas do usuário' });
     }
   }
 }

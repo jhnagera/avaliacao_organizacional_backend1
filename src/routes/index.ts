@@ -59,6 +59,7 @@ router.get('/questionarios', questionarioController.listar.bind(questionarioCont
 router.get('/questionarios/:id', questionarioController.buscarPorId.bind(questionarioController));
 router.put('/questionarios/:id', isRHorAdmin, questionarioController.atualizar.bind(questionarioController));
 router.delete('/questionarios/:id', isRHorAdmin, questionarioController.deletar.bind(questionarioController));
+router.get('/questionarios/:id/minhas-respostas', questionarioController.obterMinhasRespostas.bind(questionarioController));
 router.post('/questionarios/:id/responder', questionarioController.responder.bind(questionarioController));
 router.get('/questionarios/:id/resultados', isRHorAdmin, questionarioController.obterResultados.bind(questionarioController));
 

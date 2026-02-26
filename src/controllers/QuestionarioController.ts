@@ -23,13 +23,13 @@ export class QuestionarioController {
       const questionario = questionarioRepository.create({
         titulo,
         descricao,
-        data_inicio,
-        data_fim,
+        data_inicio: data_inicio === '' ? null : data_inicio,
+        data_fim: data_fim === '' ? null : data_fim,
         anonimo,
         tipo,
         destinatario_tipo,
-        departamento_id,
-        usuario_id,
+        departamento_id: departamento_id === '' ? null : departamento_id,
+        usuario_id: usuario_id === '' ? null : usuario_id,
         empresa_id,
         questoes: questoes?.map((q: any, index: number) => ({
           pergunta: q.pergunta,
@@ -122,6 +122,11 @@ export class QuestionarioController {
       const { id } = req.params;
       const empresa_id = req.user?.empresa_id;
       const { questoes, ...dadosQuestionario } = req.body;
+
+      if (dadosQuestionario.departamento_id === '') dadosQuestionario.departamento_id = null;
+      if (dadosQuestionario.usuario_id === '') dadosQuestionario.usuario_id = null;
+      if (dadosQuestionario.data_inicio === '') dadosQuestionario.data_inicio = null;
+      if (dadosQuestionario.data_fim === '') dadosQuestionario.data_fim = null;
 
       const questionarioRepository = AppDataSource.getRepository(Questionario);
       const questaoRepository = AppDataSource.getRepository(Questao);

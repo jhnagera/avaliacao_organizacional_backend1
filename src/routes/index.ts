@@ -73,7 +73,7 @@ router.delete('/avisos/:id', isRHorAdmin, avisoController.deletar.bind(avisoCont
 
 // Reclamações e Sugestões
 router.post('/reclamacoes', reclamacaoController.criar.bind(reclamacaoController));
-router.get('/reclamacoes', isRHorAdmin, reclamacaoController.listar.bind(reclamacaoController));
+router.get('/reclamacoes', reclamacaoController.listar.bind(reclamacaoController));
 router.put('/reclamacoes/:id', isRHorAdmin, reclamacaoController.atualizar.bind(reclamacaoController));
 
 // Denúncias

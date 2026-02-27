@@ -69,29 +69,48 @@ export class AvisoController {
 export class ReclamacaoController {
   async criar(req: AuthRequest, res: Response) {
     try {
+      console.log('[DEBUG Reclamacao.criar] body:', JSON.stringify(req.body));
+      console.log('[DEBUG Reclamacao.criar] user:', JSON.stringify({ id: req.user?.id, empresa_id: req.user?.empresa_id, tipo: req.user?.tipo }));
+
       const { empresa_id: empresa_id_body, ...rest } = req.body;
       let empresa_id = req.user?.tipo === 'super_admin' ? (empresa_id_body || req.user?.empresa_id) : req.user?.empresa_id;
       const usuario_id = req.body.anonimo ? null : req.user?.id;
+
+      console.log('[DEBUG Reclamacao.criar] resolved ids:', { empresa_id, usuario_id });
+
       const reclamacaoRepository = AppDataSource.getRepository(Reclamacao);
       const reclamacao = reclamacaoRepository.create({ ...rest, empresa_id, usuario_id });
       await reclamacaoRepository.save(reclamacao);
+
+      console.log('[DEBUG Reclamacao.criar] SUCESSO:', reclamacao.id);
       return res.status(201).json(reclamacao);
     } catch (error) {
+      console.error('[DEBUG Reclamacao.criar] ERRO:', error);
       return res.status(500).json({ error: 'Erro ao criar reclamação/sugestão' });
     }
   }
 
   async listar(req: AuthRequest, res: Response) {
     try {
-      const isSuperAdmin = req.user?.tipo === 'super_admin';
+      const userTipo = req.user?.tipo;
       const empresa_id = req.user?.empresa_id;
+      const usuario_id = req.user?.id;
       const { tipo } = req.query;
       const reclamacaoRepository = AppDataSource.getRepository(Reclamacao);
 
       const where: any = {};
-      if (!isSuperAdmin) {
+
+      if (userTipo === 'super_admin') {
+        // super_admin vê tudo
+      } else if (userTipo === 'admin' || userTipo === 'rh') {
+        // admin/rh vê todas da empresa
         where.empresa_id = empresa_id;
+      } else {
+        // colaborador vê apenas as suas
+        where.empresa_id = empresa_id;
+        where.usuario_id = usuario_id;
       }
+
       if (tipo) where.tipo = tipo;
 
       const reclamacoes = await reclamacaoRepository.find({

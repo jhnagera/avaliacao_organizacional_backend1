@@ -83,11 +83,17 @@ export class ReclamacaoController {
 
   async listar(req: AuthRequest, res: Response) {
     try {
+      const isSuperAdmin = req.user?.tipo === 'super_admin';
       const empresa_id = req.user?.empresa_id;
       const { tipo } = req.query;
       const reclamacaoRepository = AppDataSource.getRepository(Reclamacao);
-      const where: any = { empresa_id };
+
+      const where: any = {};
+      if (!isSuperAdmin) {
+        where.empresa_id = empresa_id;
+      }
       if (tipo) where.tipo = tipo;
+
       const reclamacoes = await reclamacaoRepository.find({
         where,
         relations: ['usuario'],
@@ -102,9 +108,16 @@ export class ReclamacaoController {
   async atualizar(req: AuthRequest, res: Response) {
     try {
       const { id } = req.params;
+      const isSuperAdmin = req.user?.tipo === 'super_admin';
       const empresa_id = req.user?.empresa_id;
       const reclamacaoRepository = AppDataSource.getRepository(Reclamacao);
-      const reclamacao = await reclamacaoRepository.findOne({ where: { id, empresa_id } });
+
+      const where: any = { id };
+      if (!isSuperAdmin) {
+        where.empresa_id = empresa_id;
+      }
+
+      const reclamacao = await reclamacaoRepository.findOne({ where });
       if (!reclamacao) return res.status(404).json({ error: 'Reclamação/sugestão não encontrada' });
       reclamacaoRepository.merge(reclamacao, req.body);
       await reclamacaoRepository.save(reclamacao);
@@ -157,10 +170,17 @@ export class DenunciaController {
 
   async listar(req: AuthRequest, res: Response) {
     try {
+      const isSuperAdmin = req.user?.tipo === 'super_admin';
       const empresa_id = req.user?.empresa_id;
       const denunciaRepository = AppDataSource.getRepository(Denuncia);
+
+      const where: any = {};
+      if (!isSuperAdmin) {
+        where.empresa_id = empresa_id;
+      }
+
       const denuncias = await denunciaRepository.find({
-        where: { empresa_id },
+        where,
         relations: ['usuario'],
         order: { criado_em: 'DESC' }
       });
@@ -173,9 +193,16 @@ export class DenunciaController {
   async atualizar(req: AuthRequest, res: Response) {
     try {
       const { id } = req.params;
+      const isSuperAdmin = req.user?.tipo === 'super_admin';
       const empresa_id = req.user?.empresa_id;
       const denunciaRepository = AppDataSource.getRepository(Denuncia);
-      const denuncia = await denunciaRepository.findOne({ where: { id, empresa_id } });
+
+      const where: any = { id };
+      if (!isSuperAdmin) {
+        where.empresa_id = empresa_id;
+      }
+
+      const denuncia = await denunciaRepository.findOne({ where });
       if (!denuncia) return res.status(404).json({ error: 'Denúncia não encontrada' });
       denunciaRepository.merge(denuncia, req.body);
       await denunciaRepository.save(denuncia);

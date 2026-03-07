@@ -5,6 +5,8 @@ import { UsuarioController } from '../controllers/UsuarioController';
 import { DepartamentoController } from '../controllers/DepartamentoController';
 import { QuestionarioController } from '../controllers/QuestionarioController';
 import { AvisoController, ReclamacaoController, DenunciaController, ArquivoController } from '../controllers/OutrosControllers';
+import { ContraChequeController } from '../controllers/ContraChequeController';
+import uploadContracheque from '../config/multer';
 import { MetadataController } from '../controllers/MetadataController';
 import { authMiddleware, isAdmin, isRHorAdmin } from '../middlewares/auth';
 
@@ -20,6 +22,7 @@ const avisoController = new AvisoController();
 const reclamacaoController = new ReclamacaoController();
 const denunciaController = new DenunciaController();
 const arquivoController = new ArquivoController();
+const contrachequeController = new ContraChequeController();
 const metadataController = new MetadataController();
 
 // Rotas públicas
@@ -83,5 +86,11 @@ router.put('/denuncias/:id', isAdmin, denunciaController.atualizar.bind(denuncia
 
 // Arquivos
 router.get('/arquivos', arquivoController.listar.bind(arquivoController));
+
+// Contra Cheques
+router.post('/contracheques/upload', isRHorAdmin, uploadContracheque.single('arquivo'), contrachequeController.upload.bind(contrachequeController));
+router.get('/contracheques', contrachequeController.listar.bind(contrachequeController));
+router.get('/contracheques/:id/download', contrachequeController.download.bind(contrachequeController));
+router.get('/contracheques/:id/visualizar', contrachequeController.visualizar.bind(contrachequeController));
 
 export default router;

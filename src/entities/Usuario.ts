@@ -5,6 +5,7 @@ import { Departamento } from './Departamento';
 import { RespostaQuestionario } from './RespostaQuestionario';
 import { Reclamacao } from './Reclamacao';
 import { Denuncia } from './Denuncia';
+import { ContraCheque } from './ContraCheque';
 
 export enum TipoUsuario {
   ADMIN = 'admin',
@@ -68,6 +69,9 @@ export class Usuario {
 
   @OneToMany(() => Denuncia, denuncia => denuncia.usuario)
   denuncias: Denuncia[];
+
+  @OneToMany(() => ContraCheque, contracheque => contracheque.usuario)
+  contracheques: ContraCheque[];
 
   @CreateDateColumn()
   criado_em: Date;

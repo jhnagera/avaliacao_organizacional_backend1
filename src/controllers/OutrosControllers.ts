@@ -82,7 +82,7 @@ export class ReclamacaoController {
       const reclamacao = reclamacaoRepository.create({ ...rest, empresa_id, usuario_id });
       await reclamacaoRepository.save(reclamacao);
 
-      console.log('[DEBUG Reclamacao.criar] SUCESSO:', reclamacao.id);
+      console.log('[DEBUG Reclamacao.criar] SUCESSO:', (reclamacao as any).id);
       return res.status(201).json(reclamacao);
     } catch (error) {
       console.error('[DEBUG Reclamacao.criar] ERRO:', error);

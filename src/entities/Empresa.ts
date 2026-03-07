@@ -3,6 +3,7 @@ import { Usuario } from './Usuario';
 import { Departamento } from './Departamento';
 import { Questionario } from './Questionario';
 import { Aviso } from './Aviso';
+import { ContraCheque } from './ContraCheque';
 
 @Entity('empresas')
 export class Empresa {
@@ -47,4 +48,7 @@ export class Empresa {
 
   @OneToMany(() => Aviso, aviso => aviso.empresa)
   avisos: Aviso[];
+
+  @OneToMany(() => ContraCheque, contracheque => contracheque.empresa)
+  contracheques: ContraCheque[];
 }
